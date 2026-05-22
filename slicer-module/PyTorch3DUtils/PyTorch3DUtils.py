@@ -20,7 +20,6 @@ Usage from other Slicer modules:
 """
 
 import logging
-import os
 import platform
 import sys
 from typing import Optional
@@ -41,12 +40,34 @@ from slicer.ScriptedLoadableModule import (
 # The PEP 503 simple index served from gh-pages.
 WHEEL_INDEX_URL = "https://ImageMindAnalytics.github.io/pytorch3d-slicer-wheels/simple/"
 
-# What we built our wheels against. If the user's installed torch differs
-# in major.minor, the binary will fail to import at runtime, so we check
+# What we built our wheels against. Each (torch, backend) pair must map
+# to a wheel published on WHEEL_INDEX_URL whose PEP 440 local version is
+# "pt" + torch.replace(".", "") + backend (matches scripts/build_one.py).
+# If the user's installed torch+backend doesn't match any pair by
+# major.minor, the binary would fail to import at runtime, so we check
 # up-front and explain.
-SUPPORTED_TORCH = "2.12.0"
+SUPPORTED_WHEELS = [
+    ("2.6.0", "cu124"),
+    ("2.8.0", "cu129"),
+    ("2.8.0", "cpu"),
+]
 SUPPORTED_PYTHON = (3, 12)
 SUPPORTED_PYTORCH3D = "0.7.9"
+
+
+def _major_minor(version: str) -> str:
+    """Return 'X.Y' from a version string like '2.6.0' or '2.6.0+cu124'."""
+    return ".".join(version.split("+")[0].split(".")[:2])
+
+
+def _find_supported_wheel(torch_ver: str, backend: str):
+    """Return the (torch, backend) entry from SUPPORTED_WHEELS matching the
+    user's installed torch by major.minor and backend exactly, else None."""
+    installed_mm = _major_minor(torch_ver)
+    for t, b in SUPPORTED_WHEELS:
+        if _major_minor(t) == installed_mm and b == backend:
+            return (t, b)
+    return None
 
 
 # -----------------------------------------------------------------------------
@@ -145,26 +166,26 @@ class PyTorch3DUtilsLogic(ScriptedLoadableModuleLogic):
                 "PyTorch is not installed. Install it first using the "
                 "PyTorch extension (PyTorch Utils module), then return here."
             )
-        # torch versions look like "2.12.0+cu130" or "2.12.0+cpu"
-        installed_mm = ".".join(torch_ver.split("+")[0].split(".")[:2])
-        supported_mm = ".".join(SUPPORTED_TORCH.split(".")[:2])
-        if installed_mm != supported_mm:
+        backend = self._detect_backend()
+        if _find_supported_wheel(torch_ver, backend) is None:
+            available = ", ".join(f"torch {t}+{b}" for t, b in SUPPORTED_WHEELS)
             return (
-                f"Installed torch {torch_ver} doesn't match the version the "
-                f"wheels were built for (torch {SUPPORTED_TORCH}). "
-                f"Importing pytorch3d would fail with undefined symbol errors.\n\n"
+                f"Installed torch {torch_ver} (backend {backend}) doesn't "
+                f"match any wheel in our index.\n"
+                f"Available: {available}\n\n"
                 f"Options:\n"
-                f"  1. Uninstall torch and reinstall via PyTorch Utils. "
-                f"It may pick a compatible version automatically.\n"
-                f"  2. Use a Slicer build with a matching torch.\n"
+                f"  1. Reinstall torch via PyTorch Utils, choosing a version "
+                f"     and backend in the available list.\n"
+                f"  2. Add a matching row to matrix.yml in pytorch3d-slicer-"
+                f"wheels and rebuild.\n"
             )
         return None
 
     def _detect_backend(self) -> str:
-        """Return 'cu130' or 'cpu' based on torch's build."""
+        """Return e.g. 'cu124', 'cu129', or 'cpu' based on torch's build."""
         torch_ver = self.installed_torch_version() or ""
         if "+cu" in torch_ver:
-            # e.g. "2.12.0+cu130" -> "cu130"
+            # e.g. "2.6.0+cu124" -> "cu124"
             return torch_ver.split("+")[1]
         return "cpu"
 
@@ -189,18 +210,15 @@ class PyTorch3DUtilsLogic(ScriptedLoadableModuleLogic):
         if err:
             raise RuntimeError(err)
 
+        # _check_torch already verified a wheel exists for (torch, backend).
         backend = self._detect_backend()
-        if backend not in ("cu130", "cpu"):
-            raise RuntimeError(
-                f"Torch backend '{backend}' is not in our wheel set. "
-                f"We have: cu130, cpu. Reinstall torch via PyTorch Utils "
-                f"choosing a matching backend, or open an issue."
-            )
+        match = _find_supported_wheel(self.installed_torch_version(), backend)
+        torch_for_wheel, _ = match
 
         # Local version specifier targets our exact wheel.
         # Format mirrors scripts/build_one.py: "pt" + torch.replace(".","") + backend
-        # e.g. torch 2.12.0 + cu130 -> "pt2120cu130"
-        torch_compact = SUPPORTED_TORCH.replace(".", "")
+        # e.g. torch 2.6.0 + cu124 -> "pt260cu124"
+        torch_compact = torch_for_wheel.replace(".", "")
         backend_local = f"pt{torch_compact}{backend}"
         spec = f"pytorch3d=={SUPPORTED_PYTORCH3D}+{backend_local}"
 

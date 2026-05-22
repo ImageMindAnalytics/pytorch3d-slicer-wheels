@@ -25,14 +25,15 @@ PyTorch3D version: **0.7.9**
 
 ## Using the wheels directly
 
-From a Slicer Python console:
+From a Slicer Python console (pin to the local-version tag of the wheel
+that matches your installed torch — `+pt260cu124` for torch 2.6.0+cu124,
+`+pt280cu129` for torch 2.8.0+cu129, `+pt280cpu` for torch 2.8.0+cpu):
 
 ```python
-import slicer.packaging
-# CPU
-slicer.packaging.pip_ensure(
-    "pytorch3d==0.7.9",
-    extra_index_url="https://ImageMindAnalytics.github.io/pytorch3d-slicer-wheels/simple/",
+import slicer.util
+slicer.util.pip_install(
+    "pytorch3d==0.7.9+pt260cu124 "
+    "--extra-index-url https://ImageMindAnalytics.github.io/pytorch3d-slicer-wheels/simple/"
 )
 ```
 
