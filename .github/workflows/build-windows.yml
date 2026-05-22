@@ -77,15 +77,15 @@ jobs:
           where nvcc
           nvcc --version
 
-      # -- MSVC v143 toolset --------------------------------------------------
-      # PyTorch >= 2.6 ships official Windows wheels built with VS 2022 /
-      # MSVC v143. PyTorch 2.12 also forces -std=c++20 on native extensions,
-      # which v142 (VS 2019) doesn't support — Thrust then errors with
-      # "requires at least C++17". So we use the runner's default v143.
+      # -- MSVC toolset -------------------------------------------------------
+      # Per matrix row. Older torch (<=2.5) needs v142 / 14.29 to match
+      # PyTorch's own wheel ABI; newer torch needs v143 (default) because
+      # PyTorch 2.6+ forces -std=c++20 which v142 doesn't support.
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+          toolset: ${{ matrix.build.msvc_toolset }}
 
       - name: Show compiler
         shell: cmd
@@ -106,6 +106,7 @@ jobs:
             --torchvision "${{ matrix.build.torchvision }}" ^
             --cuda "${{ matrix.build.cuda }}" ^
             --pytorch3d "${{ matrix.build.pytorch3d }}" ^
+            --cuda-arch-list "${{ matrix.build.cuda_arch_list }}" ^
             --src pytorch3d-src ^
             --out wheels
 

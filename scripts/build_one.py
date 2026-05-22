@@ -35,6 +35,12 @@ def main():
     p.add_argument("--torchvision", required=True, help="e.g. 0.27.0")
     p.add_argument("--cuda", required=True, help="'cpu' or '13.0'")
     p.add_argument("--pytorch3d", required=True, help="e.g. 0.7.9")
+    p.add_argument(
+        "--cuda-arch-list",
+        default="",
+        help="TORCH_CUDA_ARCH_LIST value, e.g. '7.5;8.0;8.6;8.9;9.0'. "
+             "Ignored when --cuda=cpu.",
+    )
     p.add_argument("--src", required=True, help="pytorch3d source dir")
     p.add_argument("--out", required=True, help="output wheel dir")
     args = p.parse_args()
@@ -101,11 +107,12 @@ def main():
 
     if args.cuda != "cpu":
         env["FORCE_CUDA"] = "1"
-        # NVCC needs to know which arches to target. CUDA 13.0 dropped
-        # Pascal (sm_60) and Volta (sm_70), so the floor is Turing.
-        # Range covers Turing/Ampere/Ada/Hopper consumer + datacenter.
-        # Add 10.0;12.0 (Blackwell) if you need RTX 50-series / B100.
-        env["TORCH_CUDA_ARCH_LIST"] = "7.5;8.0;8.6;8.9;9.0"
+        # NVCC needs to know which arches to target. Comes from matrix.yml
+        # because each CUDA major drops old arches (CUDA 13 dropped sm_60,
+        # sm_70). Required when building CUDA wheels.
+        if not args.cuda_arch_list:
+            sys.exit("--cuda-arch-list is required when --cuda != cpu")
+        env["TORCH_CUDA_ARCH_LIST"] = args.cuda_arch_list
     else:
         env["FORCE_CUDA"] = "0"
         # When building CPU-only, pytorch3d's setup.py still inspects
