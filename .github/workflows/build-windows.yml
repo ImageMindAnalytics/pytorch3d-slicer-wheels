@@ -64,9 +64,10 @@ jobs:
         with:
           cuda: ${{ matrix.build.cuda }}.0
           method: network
-          # Sub-packages keep install lean. nvcc + headers + libs are what
-          # pytorch3d's setup.py actually needs.
-          sub-packages: '["nvcc", "cudart", "cudart_dev", "thrust", "curand_dev", "cublas_dev", "cusparse_dev", "cusolver_dev", "cufft_dev"]'
+          # Install the full toolkit. Picking sub-packages was brittle
+          # because CUDA 13.0 reshuffled component names (e.g. there's no
+          # cudart_dev_13.0; crt/host_config.h moved). The full install
+          # adds ~5-10 min but eliminates per-version component archaeology.
 
       - name: Show CUDA env
         if: matrix.build.cuda != 'cpu'
