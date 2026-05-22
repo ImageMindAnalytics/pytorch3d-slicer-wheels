@@ -30,6 +30,17 @@ builds:
     msvc_toolset: ""
     cuda_arch_list: "7.0;7.5;8.0;8.6;8.9;9.0"
 
+  - name: slicer510-py312-torch280-cu129-win
+    python: "3.12"
+    torch: "2.8.0"
+    torchvision: "0.23.0"
+    cuda: "12.9"
+    pytorch3d: "0.7.9"
+    os: windows-2022
+    arch: win_amd64
+    msvc_toolset: ""
+    cuda_arch_list: "7.0;7.5;8.0;8.6;8.9;9.0"
+
   - name: slicer510-py312-torch2120-cu130-win
     python: "3.12"
     torch: "2.12.0"
