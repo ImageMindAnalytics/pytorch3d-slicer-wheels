@@ -17,7 +17,6 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -105,18 +104,6 @@ def main():
     env["PYTORCH3D_NO_NINJA"] = "0"
     env["MAX_JOBS"] = "4"  # avoid OOM on GH runners
 
-    # Skip pulsar (differentiable point cloud renderer). Pulsar's CUDA
-    # template instantiations fail to link on Windows with MSVC v143 +
-    # /LTCG (unresolved externals on pulsar::Renderer::calc_signature<1>
-    # etc.). pytorch3d 0.7.9 doesn't honor any "no pulsar" env var, so
-    # we delete the source dir before setup.py globs for *.cpp / *.cu.
-    # Mesh ops, knn, sampling, and the standard rasterizer don't depend
-    # on pulsar — only PulsarPointsRenderer does. Remove this block if
-    # a future pytorch3d release fixes the link issue.
-    pulsar_csrc = src / "pytorch3d" / "csrc" / "pulsar"
-    if pulsar_csrc.exists():
-        shutil.rmtree(pulsar_csrc)
-        print(f"Removed {pulsar_csrc} to skip pulsar build")
 
     if args.cuda != "cpu":
         env["FORCE_CUDA"] = "1"
