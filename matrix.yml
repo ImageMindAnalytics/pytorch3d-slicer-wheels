@@ -1,0 +1,30 @@
+# Build matrix for pytorch3d wheels.
+# Each row produces exactly one wheel. Keep this small and explicit.
+#
+# Fields:
+#   python      - cpython version (must match Slicer's bundled python)
+#   torch       - exact torch version to build against
+#   torchvision - matching torchvision (informational, not always needed at build)
+#   cuda        - "cpu" or a CUDA version like "12.4"
+#   pytorch3d   - pytorch3d release tag (without leading v)
+#   os          - github runner label
+#   arch        - wheel platform tag
+
+builds:
+  - name: slicer510-py312-torch251-cu124-win
+    python: "3.12"
+    torch: "2.5.1"
+    torchvision: "0.20.1"
+    cuda: "12.4"
+    pytorch3d: "0.7.9"
+    os: windows-2022
+    arch: win_amd64
+
+  - name: slicer510-py312-torch251-cpu-win
+    python: "3.12"
+    torch: "2.5.1"
+    torchvision: "0.20.1"
+    cuda: "cpu"
+    pytorch3d: "0.7.9"
+    os: windows-2022
+    arch: win_amd64
