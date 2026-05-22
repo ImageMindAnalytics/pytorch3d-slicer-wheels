@@ -105,6 +105,14 @@ def main():
     env["PYTORCH3D_NO_NINJA"] = "0"
     env["MAX_JOBS"] = "4"  # avoid OOM on GH runners
 
+    # Skip pulsar (differentiable point cloud renderer). Pulsar's CUDA
+    # template instantiations fail to link on Windows with MSVC v143 +
+    # /LTCG (unresolved externals on pulsar::Renderer::calc_signature<1>
+    # etc.). Mesh ops, knn, sampling, and the standard rasterizer don't
+    # depend on it. Drop this if you need PulsarPointsRenderer and can
+    # work around the link error.
+    env["PYTORCH3D_NO_PULSAR"] = "1"
+
     if args.cuda != "cpu":
         env["FORCE_CUDA"] = "1"
         # NVCC needs to know which arches to target. Comes from matrix.yml
