@@ -1,4 +1,12 @@
-name: Build Windows wheels
+name: Build Windows wheels (cu130 experimental)
+
+# Separate workflow for torch 2.12 + CUDA 13.0, which currently fails to
+# link pulsar with MSVC v143. Lets us iterate on that combo without
+# touching the stable wheels produced by build-windows.yml.
+#
+# Publishing is additive (same as build-windows.yml): merges wheels
+# already on gh-pages instead of replacing them. Both workflows share
+# the "gh-pages-deploy" concurrency group so they queue, not race.
 
 on:
   workflow_dispatch:
@@ -6,15 +14,9 @@ on:
       publish:
         description: "Publish index to gh-pages after build"
         type: boolean
-        default: true
-  push:
-    tags:
-      - "v*"
+        default: false  # default off — this build is expected to fail
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Read matrix.yml into a JSON matrix that the build job can fan out over.
-  # ---------------------------------------------------------------------------
   load-matrix:
     runs-on: ubuntu-latest
     outputs:
@@ -27,13 +29,10 @@ jobs:
           python3 -m pip install pyyaml --quiet
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, yaml
-          m = yaml.safe_load(open("matrix.yml"))
+          m = yaml.safe_load(open("matrix-cu130.yml"))
           print("builds=" + json.dumps(m["builds"]))
           PY
 
-  # ---------------------------------------------------------------------------
-  # Build one wheel per matrix row.
-  # ---------------------------------------------------------------------------
   build:
     needs: load-matrix
     strategy:
@@ -57,17 +56,12 @@ jobs:
           ref: v${{ matrix.build.pytorch3d }}
           path: pytorch3d-src
 
-      # -- CUDA install (only when needed) -----------------------------------
       - name: Install CUDA Toolkit ${{ matrix.build.cuda }}
         if: matrix.build.cuda != 'cpu'
         uses: Jimver/cuda-toolkit@v0.2.35
         with:
           cuda: ${{ matrix.build.cuda }}.0
           method: network
-          # Install the full toolkit. Picking sub-packages was brittle
-          # because CUDA 13.0 reshuffled component names (e.g. there's no
-          # cudart_dev_13.0; crt/host_config.h moved). The full install
-          # adds ~5-10 min but eliminates per-version component archaeology.
 
       - name: Show CUDA env
         if: matrix.build.cuda != 'cpu'
@@ -77,10 +71,6 @@ jobs:
           where nvcc
           nvcc --version
 
-      # -- MSVC toolset -------------------------------------------------------
-      # Per matrix row. Older torch (<=2.5) needs v142 / 14.29 to match
-      # PyTorch's own wheel ABI; newer torch needs v143 (default) because
-      # PyTorch 2.6+ forces -std=c++20 which v142 doesn't support.
       - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
@@ -93,7 +83,6 @@ jobs:
           where cl
           cl
 
-      # -- Build --------------------------------------------------------------
       - name: Build wheel
         shell: cmd
         env:
@@ -125,19 +114,9 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-  # ---------------------------------------------------------------------------
-  # Collect all wheels, generate the PEP 503 index, deploy to gh-pages.
-  #
-  # Publish is additive: we pull the wheels currently on gh-pages and
-  # merge them with this run's artifacts before regenerating the index.
-  # Wheels from this run overwrite same-named existing wheels; everything
-  # else is preserved. This way a workflow that only builds a subset of
-  # the matrix (e.g. build-windows-cu130.yml) doesn't wipe the stable
-  # wheels published by build-windows.yml, and vice versa.
-  # ---------------------------------------------------------------------------
   publish:
     needs: build
-    if: ${{ github.event_name == 'push' || inputs.publish }}
+    if: ${{ inputs.publish }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -159,14 +138,12 @@ jobs:
         with:
           ref: gh-pages
           path: existing-pages
-        continue-on-error: true  # first publish, gh-pages doesn't exist yet
+        continue-on-error: true
 
       - name: Merge new + existing wheels
         run: |
           mkdir -p wheels
-          # 1. This run's wheels (these win on name collisions)
           find artifacts -name '*.whl' -exec cp -f {} wheels/ \;
-          # 2. Existing wheels from gh-pages, but only if not built this run
           if [ -d existing-pages/simple/pytorch3d ]; then
             for whl in existing-pages/simple/pytorch3d/*.whl; do
               [ -e "$whl" ] || continue

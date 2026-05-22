@@ -1,0 +1,16 @@
+# Experimental matrix: torch 2.12 + CUDA 13.0.
+# Currently broken — pulsar fails to link with MSVC v143 + CUDA 13.
+# Lives in a separate file so iterating on it doesn't disturb the stable
+# wheels in matrix.yml. See .github/workflows/build-windows-cu130.yml.
+
+builds:
+  - name: slicer510-py312-torch2120-cu130-win
+    python: "3.12"
+    torch: "2.12.0"
+    torchvision: "0.27.0"
+    cuda: "13.0"
+    pytorch3d: "0.7.9"
+    os: windows-2022
+    arch: win_amd64
+    msvc_toolset: ""
+    cuda_arch_list: "7.5;8.0;8.6;8.9;9.0"
