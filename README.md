@@ -17,8 +17,8 @@ SlicerPyTorch extension.
 
 | Slicer | Python | torch    | CUDA  | OS         |
 |--------|--------|----------|-------|------------|
-| 5.10   | 3.12   | 2.5.1    | cu124 | win_amd64  |
-| 5.10   | 3.12   | 2.5.1    | cpu   | win_amd64  |
+| 5.10   | 3.12   | 2.12.0   | cu130 | win_amd64  |
+| 5.10   | 3.12   | 2.12.0   | cpu   | win_amd64  |
 
 PyTorch3D version: **0.7.9**
 

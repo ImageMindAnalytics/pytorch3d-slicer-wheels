@@ -44,7 +44,7 @@ WHEEL_INDEX_URL = "https://ImageMindAnalytics.github.io/pytorch3d-slicer-wheels/
 # What we built our wheels against. If the user's installed torch differs
 # in major.minor, the binary will fail to import at runtime, so we check
 # up-front and explain.
-SUPPORTED_TORCH = "2.5.1"
+SUPPORTED_TORCH = "2.12.0"
 SUPPORTED_PYTHON = (3, 12)
 SUPPORTED_PYTORCH3D = "0.7.9"
 
@@ -145,7 +145,7 @@ class PyTorch3DUtilsLogic(ScriptedLoadableModuleLogic):
                 "PyTorch is not installed. Install it first using the "
                 "PyTorch extension (PyTorch Utils module), then return here."
             )
-        # torch versions look like "2.5.1+cu124" or "2.5.1+cpu"
+        # torch versions look like "2.12.0+cu130" or "2.12.0+cpu"
         installed_mm = ".".join(torch_ver.split("+")[0].split(".")[:2])
         supported_mm = ".".join(SUPPORTED_TORCH.split(".")[:2])
         if installed_mm != supported_mm:
@@ -161,10 +161,10 @@ class PyTorch3DUtilsLogic(ScriptedLoadableModuleLogic):
         return None
 
     def _detect_backend(self) -> str:
-        """Return 'cu124' or 'cpu' based on torch's build."""
+        """Return 'cu130' or 'cpu' based on torch's build."""
         torch_ver = self.installed_torch_version() or ""
         if "+cu" in torch_ver:
-            # e.g. "2.5.1+cu124" -> "cu124"
+            # e.g. "2.12.0+cu130" -> "cu130"
             return torch_ver.split("+")[1]
         return "cpu"
 
@@ -190,16 +190,16 @@ class PyTorch3DUtilsLogic(ScriptedLoadableModuleLogic):
             raise RuntimeError(err)
 
         backend = self._detect_backend()
-        if backend not in ("cu124", "cpu"):
+        if backend not in ("cu130", "cpu"):
             raise RuntimeError(
                 f"Torch backend '{backend}' is not in our wheel set. "
-                f"We have: cu124, cpu. Reinstall torch via PyTorch Utils "
+                f"We have: cu130, cpu. Reinstall torch via PyTorch Utils "
                 f"choosing a matching backend, or open an issue."
             )
 
         # Local version specifier targets our exact wheel.
         # Format mirrors scripts/build_one.py: "pt" + torch.replace(".","") + backend
-        # e.g. torch 2.5.1 + cu124 -> "pt251cu124"
+        # e.g. torch 2.12.0 + cu130 -> "pt2120cu130"
         torch_compact = SUPPORTED_TORCH.replace(".", "")
         backend_local = f"pt{torch_compact}{backend}"
         spec = f"pytorch3d=={SUPPORTED_PYTORCH3D}+{backend_local}"

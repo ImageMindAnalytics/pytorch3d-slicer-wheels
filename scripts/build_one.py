@@ -31,9 +31,9 @@ def run(cmd, **kwargs):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--python", required=True, help="e.g. 3.12")
-    p.add_argument("--torch", required=True, help="e.g. 2.5.1")
-    p.add_argument("--torchvision", required=True, help="e.g. 0.20.1")
-    p.add_argument("--cuda", required=True, help="'cpu' or '12.4'")
+    p.add_argument("--torch", required=True, help="e.g. 2.12.0")
+    p.add_argument("--torchvision", required=True, help="e.g. 0.27.0")
+    p.add_argument("--cuda", required=True, help="'cpu' or '13.0'")
     p.add_argument("--pytorch3d", required=True, help="e.g. 0.7.9")
     p.add_argument("--src", required=True, help="pytorch3d source dir")
     p.add_argument("--out", required=True, help="output wheel dir")
@@ -53,7 +53,7 @@ def main():
     if args.cuda == "cpu":
         torch_index = "https://download.pytorch.org/whl/cpu"
     else:
-        # 12.4 -> cu124
+        # 13.0 -> cu130
         cuda_tag = "cu" + args.cuda.replace(".", "")
         torch_index = f"https://download.pytorch.org/whl/{cuda_tag}"
 

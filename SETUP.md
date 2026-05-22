@@ -27,8 +27,8 @@
 From the GitHub Actions tab, run the **Build Windows wheels** workflow
 manually (`workflow_dispatch`) with `publish: true`. The first run will:
 
-1. Spin up two Windows runners in parallel — one for cu124, one for cpu.
-2. Each runner installs CUDA (if needed), MSVC v142, torch 2.5.1, and
+1. Spin up two Windows runners in parallel — one for cu130, one for cpu.
+2. Each runner installs CUDA (if needed), MSVC v142, torch 2.12.0, and
    builds pytorch3d 0.7.9 from source. Expect 25-40 minutes per wheel.
 3. After both finish, the publish job downloads the artifacts, generates
    a PEP 503 index, and pushes to `gh-pages`.
@@ -75,7 +75,7 @@ build step.
 **Smoke test fails with "undefined symbol" when importing pytorch3d.**
 The wheel was built against a different torch ABI than what got
 installed for the smoke test. Pin torchvision to a version that's known
-to be released for your exact torch (check pytorch.org/whl/cu124).
+to be released for your exact torch (check pytorch.org/whl/cu130).
 
 **User reports "Installed torch X doesn't match Y" in Slicer.** The
 SlicerPyTorch extension auto-selected a different torch version than
