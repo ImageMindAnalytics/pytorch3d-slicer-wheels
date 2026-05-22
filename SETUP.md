@@ -28,7 +28,7 @@ From the GitHub Actions tab, run the **Build Windows wheels** workflow
 manually (`workflow_dispatch`) with `publish: true`. The first run will:
 
 1. Spin up two Windows runners in parallel — one for cu130, one for cpu.
-2. Each runner installs CUDA (if needed), MSVC v142, torch 2.12.0, and
+2. Each runner installs CUDA (if needed), MSVC v143, torch 2.12.0, and
    builds pytorch3d 0.7.9 from source. Expect 25-40 minutes per wheel.
 3. After both finish, the publish job downloads the artifacts, generates
    a PEP 503 index, and pushes to `gh-pages`.
@@ -64,10 +64,11 @@ if you want to keep old versions, change `force_orphan: true` to
 
 ## Troubleshooting
 
-**Build fails with "stdext::make_checked_array_iterator not found".** The
-runner's default MSVC is too new. The `ilammy/msvc-dev-cmd` step with
-`toolset: "14.29"` should prevent this — verify it's running before the
-build step.
+**Build fails with "Thrust requires at least C++17" or nvcc warning
+"-std=c++20 flag is not supported with the configured host compiler".**
+The MSVC toolset is too old for the C++ standard PyTorch requests. Make
+sure the `ilammy/msvc-dev-cmd` step has no `toolset:` pin so the runner
+uses its default v143 (VS 2022).
 
 **Build fails during nvcc compilation with OOM.** Reduce `MAX_JOBS` in
 `scripts/build_one.py` from 4 to 2.

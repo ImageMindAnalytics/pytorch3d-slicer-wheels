@@ -77,16 +77,15 @@ jobs:
           where nvcc
           nvcc --version
 
-      # -- MSVC v142 toolset --------------------------------------------------
-      # PyTorch's official Windows wheels are built with VS 2019 / v142.
-      # Using a newer toolset can introduce ABI issues at runtime. The
-      # windows-2022 runner has both v142 and v143; we explicitly select
-      # v142 with -vcvars_ver=14.29.
-      - name: Set up MSVC v142
+      # -- MSVC v143 toolset --------------------------------------------------
+      # PyTorch >= 2.6 ships official Windows wheels built with VS 2022 /
+      # MSVC v143. PyTorch 2.12 also forces -std=c++20 on native extensions,
+      # which v142 (VS 2019) doesn't support — Thrust then errors with
+      # "requires at least C++17". So we use the runner's default v143.
+      - name: Set up MSVC
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
-          toolset: "14.29"
 
       - name: Show compiler
         shell: cmd

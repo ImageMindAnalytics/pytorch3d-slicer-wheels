@@ -7,7 +7,7 @@ the workflow can pass a row from matrix.yml.
 Assumes the environment is already set up:
   - Python of the requested version is on PATH
   - CUDA toolkit is installed (if cuda != "cpu") and CUDA_HOME is set
-  - MSVC v142 is active (we use vcvarsall.bat in the workflow)
+  - MSVC v143 is active (we use vcvarsall.bat in the workflow)
   - The pytorch3d source tree is checked out at $PYTORCH3D_SRC
 
 Outputs: a single .whl in $OUTPUT_DIR.
