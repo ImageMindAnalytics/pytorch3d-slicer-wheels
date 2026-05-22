@@ -66,7 +66,7 @@ jobs:
           method: network
           # Sub-packages keep install lean. nvcc + headers + libs are what
           # pytorch3d's setup.py actually needs.
-          sub-packages: '["nvcc", "cudart", "thrust", "curand_dev", "cublas_dev"]'
+          sub-packages: '["nvcc", "cudart", "thrust", "curand_dev", "cublas_dev", "cusparse_dev", "cusolver_dev", "cufft_dev"]'
 
       - name: Show CUDA env
         if: matrix.build.cuda != 'cpu'
