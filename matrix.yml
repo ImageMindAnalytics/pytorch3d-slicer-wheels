@@ -19,16 +19,16 @@
 #                      CUDA 13.x drops sm_60/sm_70
 
 builds:
-  - name: slicer510-py312-torch251-cu124-win
+  - name: slicer510-py312-torch260-cu124-win
     python: "3.12"
-    torch: "2.5.1"
-    torchvision: "0.20.1"
+    torch: "2.6.0"
+    torchvision: "0.21.0"
     cuda: "12.4"
     pytorch3d: "0.7.9"
     os: windows-2022
     arch: win_amd64
-    msvc_toolset: "14.29"
-    cuda_arch_list: "6.0;7.0;7.5;8.0;8.6;8.9"
+    msvc_toolset: ""
+    cuda_arch_list: "7.0;7.5;8.0;8.6;8.9;9.0"
 
   - name: slicer510-py312-torch2120-cu130-win
     python: "3.12"
