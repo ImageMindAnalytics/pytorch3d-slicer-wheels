@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -68,7 +69,31 @@ def main():
     )
     run(pip + ["install", "fvcore", "iopath"])
 
-    # 2. Configure pytorch3d build environment.
+    # 2. Bake a PEP 440 local version into pytorch3d/__init__.py so the
+    #    wheel's filename AND its METADATA both carry the (torch, backend)
+    #    tag. pytorch3d's setup.py reads __version__ from this file, so
+    #    patching it pre-build is the cleanest way to produce a self-
+    #    consistent wheel — a post-build rename would leave METADATA
+    #    saying "0.7.9" and recent pip rejects the mismatch.
+    backend_tag = "cpu" if args.cuda == "cpu" else "cu" + args.cuda.replace(".", "")
+    torch_tag = "pt" + args.torch.replace(".", "")
+    local_id = f"{torch_tag}{backend_tag}"
+
+    init_py = src / "pytorch3d" / "__init__.py"
+    text = init_py.read_text(encoding="utf-8")
+    new_text, n = re.subn(
+        r'^(__version__\s*=\s*["\'])([^"\']+)(["\'])',
+        rf'\g<1>\g<2>+{local_id}\g<3>',
+        text,
+        count=1,
+        flags=re.M,
+    )
+    if n != 1:
+        sys.exit(f"Could not patch __version__ in {init_py}")
+    init_py.write_text(new_text, encoding="utf-8")
+    print(f"Patched __version__ -> 0.7.9+{local_id}")
+
+    # 3. Configure pytorch3d build environment.
     env = os.environ.copy()
     env["DISTUTILS_USE_SDK"] = "1"
     env["PYTORCH3D_NO_NINJA"] = "0"
@@ -87,7 +112,8 @@ def main():
         for v in ("CUDA_HOME", "CUDA_PATH"):
             env.pop(v, None)
 
-    # 3. Build the wheel.
+    # 4. Build the wheel. Because we patched __version__ above, the
+    #    output filename already carries the +local_id tag.
     run(
         [sys.executable, "setup.py", "bdist_wheel", "--dist-dir", str(out)],
         cwd=src,
@@ -99,26 +125,6 @@ def main():
         sys.exit("No wheel produced.")
     for w in wheels:
         print(f"Built: {w}")
-
-    # 4. Tag the wheel with our local build identifier so users can tell
-    #    which (torch, cuda) it was built against. Rename:
-    #      pytorch3d-0.7.9-cp312-cp312-win_amd64.whl
-    #    -> pytorch3d-0.7.9+pt251cu124-cp312-cp312-win_amd64.whl
-    backend_tag = "cpu" if args.cuda == "cpu" else "cu" + args.cuda.replace(".", "")
-    torch_tag = "pt" + args.torch.replace(".", "")
-    local_id = f"{torch_tag}{backend_tag}"
-
-    for w in wheels:
-        # filename format: {dist}-{version}(-{build_tag})?-{python}-{abi}-{platform}.whl
-        parts = w.stem.split("-")
-        # parts: ['pytorch3d', '0.7.9', 'cp312', 'cp312', 'win_amd64']
-        dist, version, *rest = parts
-        # PEP 440 local version: append +local_id to version
-        new_version = f"{version}+{local_id}"
-        new_name = "-".join([dist, new_version, *rest]) + ".whl"
-        new_path = w.with_name(new_name)
-        w.rename(new_path)
-        print(f"Renamed -> {new_path.name}")
 
 
 if __name__ == "__main__":
