@@ -101,10 +101,11 @@ def main():
 
     if args.cuda != "cpu":
         env["FORCE_CUDA"] = "1"
-        # NVCC needs to know which arches to target. Restrict to common
-        # consumer + datacenter compute capabilities to keep build time
-        # bounded. Skip 9.0 (Hopper) here; add it back if you need H100.
-        env["TORCH_CUDA_ARCH_LIST"] = "6.0;7.0;7.5;8.0;8.6;8.9"
+        # NVCC needs to know which arches to target. CUDA 13.0 dropped
+        # Pascal (sm_60) and Volta (sm_70), so the floor is Turing.
+        # Range covers Turing/Ampere/Ada/Hopper consumer + datacenter.
+        # Add 10.0;12.0 (Blackwell) if you need RTX 50-series / B100.
+        env["TORCH_CUDA_ARCH_LIST"] = "7.5;8.0;8.6;8.9;9.0"
     else:
         env["FORCE_CUDA"] = "0"
         # When building CPU-only, pytorch3d's setup.py still inspects
