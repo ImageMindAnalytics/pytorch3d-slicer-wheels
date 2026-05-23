@@ -1,0 +1,24 @@
+# Build matrix for macOS pytorch3d wheels.
+# Each row produces exactly one wheel. Keep this small and explicit.
+#
+# 3D Slicer ships torch 2.2.2 with its macOS x86_64 build, so we pin to
+# that exactly. macOS is always CPU here — pytorch3d's CUDA kernels only
+# matter on platforms with NVIDIA GPUs; MPS isn't used by its custom ops.
+#
+# Fields mirror matrix.yml. The macOS-specific knob:
+#   macosx_deployment_target - sets MACOSX_DEPLOYMENT_TARGET during the
+#                              build. Determines the wheel's platform
+#                              tag and the lowest macOS the wheel runs
+#                              on. 10.13 matches CPython 3.12's own
+#                              floor for macOS x86_64.
+
+builds:
+  - name: slicer510-py312-torch222-cpu-macos-x86_64
+    python: "3.12"
+    torch: "2.2.2"
+    torchvision: "0.17.2"
+    cuda: "cpu"
+    pytorch3d: "0.7.9"
+    os: macos-13
+    arch: macosx_10_13_x86_64
+    macosx_deployment_target: "10.13"

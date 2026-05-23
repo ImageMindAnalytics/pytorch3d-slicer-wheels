@@ -15,11 +15,12 @@ SlicerPyTorch extension.
 
 ## Current build matrix
 
-| Slicer | Python | torch    | CUDA  | OS         |
-|--------|--------|----------|-------|------------|
-| 5.10   | 3.12   | 2.6.0    | cu124 | win_amd64  |
-| 5.10   | 3.12   | 2.8.0    | cu129 | win_amd64  |
-| 5.10   | 3.12   | 2.8.0    | cpu   | win_amd64  |
+| Slicer | Python | torch    | CUDA  | OS                  |
+|--------|--------|----------|-------|---------------------|
+| 5.10   | 3.12   | 2.6.0    | cu124 | win_amd64           |
+| 5.10   | 3.12   | 2.8.0    | cu129 | win_amd64           |
+| 5.10   | 3.12   | 2.8.0    | cpu   | win_amd64           |
+| 5.10   | 3.12   | 2.2.2    | cpu   | macosx_10_13_x86_64 |
 
 PyTorch3D version: **0.7.9**
 
