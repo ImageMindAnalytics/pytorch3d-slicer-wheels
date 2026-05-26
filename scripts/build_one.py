@@ -114,15 +114,26 @@ def main():
             sys.exit("--cuda-arch-list is required when --cuda != cpu")
         env["TORCH_CUDA_ARCH_LIST"] = args.cuda_arch_list
 
-        # CUDA 13.x's bundled CCCL headers #error out under MSVC's
-        # traditional preprocessor. NVCC_PREPEND_FLAGS is read by
-        # nvcc itself and prepended to every invocation, which avoids
-        # patching pytorch3d's setup.py.
+        # CUDA 13.x needs extra NVCC flags. NVCC_PREPEND_FLAGS is read
+        # by nvcc itself and prepended to every invocation, which
+        # avoids patching pytorch3d's setup.py.
+        #
+        # -static-global-template-stub=false: CUDA 12+ changed default
+        # ELF visibility/linkage for template instantiations and
+        # pytorch3d hits undefined symbols at link without the old
+        # behavior. See
+        # https://developer.nvidia.com/blog/cuda-c-compiler-updates-impacting-elf-visibility-and-linkage/
+        #
+        # /Zc:preprocessor (Windows only): CUDA 13.x's bundled CCCL
+        # headers #error out under MSVC's traditional preprocessor.
         cuda_major = int(args.cuda.split(".")[0])
-        if sys.platform == "win32" and cuda_major >= 13:
+        if cuda_major >= 13:
+            extra = ["-static-global-template-stub=false"]
+            if sys.platform == "win32":
+                extra.append("-Xcompiler /Zc:preprocessor")
             existing = env.get("NVCC_PREPEND_FLAGS", "")
             env["NVCC_PREPEND_FLAGS"] = (
-                f"{existing} -Xcompiler /Zc:preprocessor"
+                f"{existing} " + " ".join(extra)
             ).strip()
     else:
         env["FORCE_CUDA"] = "0"
