@@ -9,10 +9,6 @@ Slicer's bundled Python normally requires compiling from source with a
 matching CUDA toolkit and MSVC. This repo builds those wheels once in CI
 and serves them through a PEP 503 "simple" index hosted on GitHub Pages.
 
-A companion Slicer module (`slicer-module/PyTorch3DUtils/`) installs
-pytorch3d into Slicer's Python with one click, modeled after the
-SlicerPyTorch extension.
-
 ## Current build matrix
 
 | Slicer | Python | torch    | CUDA  | OS                  |

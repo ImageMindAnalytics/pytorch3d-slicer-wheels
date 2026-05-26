@@ -11,35 +11,31 @@
    - **Actions** → General → Workflow permissions: "Read and write
      permissions". Needed for the publish step to push to gh-pages.
 
-3. Edit `slicer-module/PyTorch3DUtils/PyTorch3DUtils.py` and update
-   `WHEEL_INDEX_URL` to point at your GitHub Pages URL:
-
-   ```python
-   WHEEL_INDEX_URL = "https://ImageMindAnalytics.github.io/pytorch3d-slicer-wheels/simple/"
-   ```
-
-   Do the same for the `EXTENSION_HOMEPAGE` in
-   `slicer-module/CMakeLists.txt` if you intend to submit the module to
-   the Slicer Extensions Index later.
-
 ## First build
 
-From the GitHub Actions tab, run the **Build Windows wheels** workflow
-manually (`workflow_dispatch`) with `publish: true`. The first run will:
+From the GitHub Actions tab, run each workflow manually
+(`workflow_dispatch`) with `publish: true`:
 
-1. Spin up two Windows runners in parallel — one for cu130, one for cpu.
-2. Each runner installs CUDA (if needed), MSVC v143, torch 2.12.0, and
-   builds pytorch3d 0.7.9 from source. Expect 25-40 minutes per wheel.
-3. After both finish, the publish job downloads the artifacts, generates
-   a PEP 503 index, and pushes to `gh-pages`.
+- **Build Windows wheels** — fans out across the rows in `matrix.yml`
+  (torch 2.6.0+cu124, 2.8.0+cu129, 2.8.0+cpu) on `windows-2022`.
+- **Build Windows wheels cu130** — torch 2.12.0+cu130 from
+  `matrix-cu130.yml`. Kept in a separate workflow because of
+  cu130-specific NVCC flags.
+- **Build macOS wheels** — torch 2.2.2+cpu from `matrix-macos.yml` on
+  `macos-13` (Intel).
 
-When it's done, browse to your Pages URL. You should see a landing page
-and `simple/pytorch3d/` listing two `.whl` files.
+Each runner installs its toolchain (CUDA / MSVC / clang) and the matching
+torch, then builds pytorch3d 0.7.9 from source. Expect 25-40 minutes per
+wheel. After build finishes, each workflow's publish job additively
+merges its artifacts into `gh-pages` (the workflows share a
+`gh-pages-deploy` concurrency group so they queue, not race).
 
-## Installing into Slicer (manual, for testing)
+When all three are done, browse to your Pages URL. You should see a
+landing page and `simple/pytorch3d/` listing one `.whl` per matrix row.
 
-Before packaging as an extension, you can verify the wheels work by
-running this in Slicer's Python console:
+## Installing into Slicer
+
+Run this in Slicer's Python console:
 
 ```python
 import slicer.util
@@ -51,16 +47,18 @@ import pytorch3d
 print(pytorch3d.__version__)
 ```
 
-If that works end-to-end, the module-based UX in
-`slicer-module/PyTorch3DUtils/` should also work.
-
 ## Updating the matrix
 
 When Slicer bumps Python, or when you want to support a new torch,
-update `matrix.yml`, push, and re-run the workflow. Old wheels stay in
-the index because `gh-pages` is replaced from artifacts on every run —
-if you want to keep old versions, change `force_orphan: true` to
-`false` in `.github/workflows/build-windows.yml` and merge instead.
+edit the relevant matrix file (`matrix.yml`, `matrix-cu130.yml`, or
+`matrix-macos.yml`), push, and re-run that workflow. Publishing is
+additive: each workflow's publish job merges its new wheels with the
+wheels already on `gh-pages`, so building a subset of the matrix
+doesn't wipe the others.
+
+To retire an old wheel, delete it from the `gh-pages` branch directly
+(or from `simple/pytorch3d/` in a worktree) and regenerate the index
+with `scripts/make_index.py`.
 
 ## Troubleshooting
 
